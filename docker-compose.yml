@@ -4,13 +4,10 @@ services:
     image: aymen-g/ansible
     container_name: ansible-container
     volumes:
-      - /chemin/vers/le/repertoire/du/projet:/chemin/vers/le/repertoire/du/projet
-      - ~/.ssh/srvIDA:/home/ansible-ag/id_rsa
+      - .ssh/id_rsa:/id_rsa
+      - ../ansible-780t:/opt/ansible
     environment:
       - ANSIBLE_VAULT_PASSWORD=supersecret
       - ANSIBLE_GID=25055  # GID de votre groupe ansible
       - ANSIBLE_UID=25055  # UID de votre utilisateur ansible
       - ANSIBLE_USERNAME=ansible-ag
-      - ANSIBLE_HOMEDIR=/home/ansible-ag
-      - GIT_CLONE_DELAY=2  # Intervalle en minutes pour le git pull
-      # Vous pouvez ajouter d'autres variables d'environnement ici
