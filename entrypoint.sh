@@ -1,98 +1,45 @@
 #!/bin/bash
 
+# Function to display error messages and exit
+function display_error {
+    echo "ERROR: $1"
+}
 
 # Default values
 DEFAULT_ANSIBLE_USERNAME="ansible"
-DEFAULT_ANSIBLE_GID=100000
-DEFAULT_ANSIBLE_UID=100000
 DEFAULT_ANSIBLE_VAULT_PASSWORD=supersecret
-SSH_KEY_FILE=/id_rsa
+DEFAULT_ANSIBLE_PRIV_KEY="/etc/hosts"
+
+# Check if required environment variables are set
 echo "######################"
-# Check and assign default values if variables are not defined
-if [ -z "$ANSIBLE_USERNAME" ]; then
-    ANSIBLE_USERNAME=$DEFAULT_ANSIBLE_USERNAME
-    echo "ANSIBLE_USERNAME not defined. Using default: $ANSIBLE_USERNAME"
+echo "Checking docker environement values:"
+[ -n "$ANSIBLE_VAULT_PASSWORD" ] || display_error "ANSIBLE_VAULT_PASSWORD is not set, Using default: $DEFAULT_ANSIBLE_VAULT_PASSWORD" || ANSIBLE_GID=$DEFAULT_ANSIBLE_VAULT_PASSWORD
+[ -n "$ANSIBLE_USERNAME" ] ||  display_error "ANSIBLE_USERNAME is not set, Using default: $DEFAULT_ANSIBLE_USERNAME"  || ANSIBLE_USERNAME=$DEFAULT_ANSIBLE_USERNAME
+if [ -e /id_rsa ]; then
+    ANSIBLE_PRIV_KEY="/id_rsa"
+else
+    display_error "/id_rsa not found, Using default: $DEFAULT_ANSIBLE_PRIV_KEY"
+    ANSIBLE_PRIV_KEY=$DEFAULT_ANSIBLE_PRIV_KEY
 fi
+export ANSIBLE_PRIV_KEY
 
-if [ -z "$ANSIBLE_GID" ]; then
-    ANSIBLE_GID=$DEFAULT_ANSIBLE_GID
-    echo "ANSIBLE_GID not defined. Using default: $ANSIBLE_GID"
-fi
-
-if [ -z "$ANSIBLE_UID" ]; then
-    ANSIBLE_UID=$DEFAULT_ANSIBLE_UID
-    echo "ANSIBLE_UID not defined. Using default: $ANSIBLE_UID"
-fi
-
-if [ -z "$SSH_KEY_FILE" ]; then
-    SSH_KEY_FILE="/id_rsa"
-    echo "SSH_KEY_FILE not found."
-fi
-
-if [ -z "$ANSIBLE_VAULT_PASSWORD" ]; then
-    ANSIBLE_VAULT_PASSWORD=$DEFAULT_ANSIBLE_VAULT_PASSWORD
-    echo "ANSIBLE_VAULT_PASSWORD not defined. Using default: $ANSIBLE_VAULT_PASSWORD"
-fi
-echo "######################"
-
-echo "######################"
 echo \$ANSIBLE_USERNAME = $ANSIBLE_USERNAME
-echo \$ANSIBLE_UID = $ANSIBLE_UID
-echo \$ANSIBLE_GID = $ANSIBLE_GID
-echo \$SSH_KEY_FILE = $SSH_KEY_FILE
-echo "######################"
-echo "" 
-
-echo "######################"
-echo Définition des variables pour $ANSIBLE_USERNAME
-ANSIBLE_HOMEDIR=/opt/$ANSIBLE_USERNAME
-echo \$ANSIBLE_HOMEDIR = $ANSIBLE_HOMEDIR
-ANSIBLE_BASHRC=$ANSIBLE_HOMEDIR/.bashrc
-echo \$ANSIBLE_BASHRC = $ANSIBLE_BASHRC
-ANSIBLE_SSHDIR=$ANSIBLE_HOMEDIR/.ssh
-echo \$ANSIBLE_SSHDIR = $ANSIBLE_SSHDIR
-ANSIBLE_PRIV_KEY=$ANSIBLE_SSHDIR/id_rsa
 echo \$ANSIBLE_PRIV_KEY = $ANSIBLE_PRIV_KEY
 echo "######################"
+
 echo ""
 
-echo "######################"
-# Add group and user creation code (same as before)
-groupadd --gid $ANSIBLE_GID $ANSIBLE_USERNAME &&
-useradd --uid $ANSIBLE_UID --gid $ANSIBLE_USERNAME --home-dir $ANSIBLE_HOMEDIR= --shell /bin/bash --comment "Ansible Account" $ANSIBLE_USERNAME
-echo "######################"
-echo ""
-
-echo "######################"
-echo "ls /home et ls \$ANSIBLE_HOMEDIR"
-ls /home
-ls $ANSIBLE_HOMEDIR
-echo "######################"
-echo ""
-
-# Create or append to the .bashrc file to set up Ansible aliases
-touch $ANSIBLE_BASHRC
-cat >> $ANSIBLE_BASHRC <<EOF
-alias ansible='/opt/ansible/bin/ansible -i /opt/ansible/inventory/hosts.yml'
-alias ansible-playbook='/opt/ansible/bin/ansible-playbook -i /opt/ansible/inventory/hosts.yml --vault-password-file=\$ANSIBLE_VAULT_PASSWORD'
-EOF
-
-# Check if the key file exists
-if [ -f "$SSH_KEY_FILE" ]; then
-    # Create SSH directory and copy key
-    mkdir -p $ANSIBLE_SSHDIR
-    cp "$SSH_PRIVATE_KEY" $ANSIBLE_SSHDIR/id_rsa
-    chmod 600 $ANSIBLE_SSHDIR/id_rsa
-    chown "$ANSIBLE_USERNAME":"$ANSIBLE_USERNAME" $ANSIBLE_HOMEDIR -R
-
-    # Start the SSH agent
-    runuser -l "$ANSIBLE_USERNAME" -c $ANSIBLE_USERNAME eval $(keychain --eval --agents ssh $ANSIBLE_SSH_KEY)
-
-    # Print a message indicating that the key was added to the agent
-    echo "SSH private key added to the SSH agent."
+# Vérifie si le fichier /etc/ansible/ansible.cfg existe
+if [ -f /etc/ansible/ansible.cfg ]; then
+    sed -i "s#^vault_password_file = .*#vault_password_file = $ANSIBLE_VAULT_PASSWORD#" /etc/ansible/ansible.cfg
+    sed -i "s#^remote_user = .*#remote_user = $ANSIBLE_USERNAME#" /etc/ansible/ansible.cfg
+    sed -i "s#^private_key_file = .*#private_key_file = $ANSIBLE_PRIV_KEY#" /etc/ansible/ansible.cfg
 else
-    echo "SSH private key file not found. Skipping SSH agent setup."
+    display_error "Le fichier /etc/ansible/ansible.cfg n'existe pas."
 fi
 
+cat /etc/ansible/ansible.cfg 
+
+echo ""
 
 tail -f /dev/null
