@@ -4,8 +4,6 @@ FROM debian:bullseye-slim
 # Set non interactive frontend for debian apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-
-
 RUN apt-get update && \
     apt-get -y upgrade && \
     apt-get install -y --no-install-recommends ansible sshpass git cron && \
