@@ -1,13 +1,12 @@
 version: '3'
 services:
-  ansible-container:
+  ansible:
     image: aymen-g/ansible
-    container_name: ansible-container
+    container_name: ansible
     volumes:
-      - /home/agazzah/.ssh/id_ansible-ag:/id_rsa
-      - ../../gitlab-forge/ansible-ida/:/opt/ansible
+      - .ssh/id_rsa:/id_rsa
+      - ../ansible-780t/:/home/root/ansible/
     environment:
-      - ANSIBLE_VAULT_PASSWORD=supersecret
-      - ANSIBLE_GID=25055  # GID de votre groupe ansible
-      - ANSIBLE_UID=25055  # UID de votre utilisateur ansible
-      - ANSIBLE_USERNAME=ansible-ida
+      - ANSIBLE_VAULT_PASSWORD=supersupersecret
+      - ANSIBLE_USERNAME=ansible-ag
+
