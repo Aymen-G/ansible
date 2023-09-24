@@ -5,8 +5,7 @@ services:
     container_name: ansible
     volumes:
       - .ssh/id_rsa:/id_rsa
-      - ../ansible-780t/:/home/root/ansible/
+      - ../ansible-ida/:/home/root/ansible/
     environment:
       - ANSIBLE_VAULT_PASSWORD=supersupersecret
-      - ANSIBLE_USERNAME=ansible-ag
-
+      - ANSIBLE_USERNAME=ansible-ida
